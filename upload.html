@@ -1,32 +1,40 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>버튼 테스트</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>파일 선택 테스트</title>
 </head>
-<body>
- <button id="addPhotoBtn" type="button" class="btn btn-secondary">+ 사진 추가하기</button>
+<body style="font-family:sans-serif; padding:20px;">
 
-<input
-  id="fileInput"
-  type="file"
-  accept="image/*"
-  multiple
-  style="position:absolute; left:-9999px; width:1px; height:1px;"
->
+  <h2>파일 선택 테스트</h2>
+
+  <p>아래 버튼을 누르면 사진 선택창이 떠야 합니다.</p>
+
+  <label for="fileInput" style="display:inline-block; padding:14px 20px; background:#2563eb; color:white; border-radius:10px; cursor:pointer;">
+    + 사진 추가하기
+  </label>
+
+  <input
+    id="fileInput"
+    type="file"
+    accept="image/*"
+    multiple
+    style="position:absolute; left:-9999px; width:1px; height:1px; opacity:0;"
+  >
+
+  <p id="result" style="margin-top:20px;">대기 중</p>
+
   <script>
-    const addPhotoBtn = document.getElementById("addPhotoBtn");
     const fileInput = document.getElementById("fileInput");
+    const result = document.getElementById("result");
 
-    addPhotoBtn.addEventListener("click", () => {
-  alert("버튼 클릭됨");
-  fileInput.click();
-});
-
-    fileInput.addEventListener("change", () => {
-      alert("파일 선택됨");
+    fileInput.addEventListener("change", (e) => {
+      const count = e.target.files.length;
+      result.textContent = count > 0 ? `파일 선택됨: ${count}개` : "선택 안 됨";
+      alert(count > 0 ? `파일 선택됨: ${count}개` : "선택 안 됨");
     });
   </script>
+
 </body>
 </html>
