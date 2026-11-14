@@ -3,25 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>파일 선택 테스트</title>
+  <title>직접 파일 선택 테스트</title>
 </head>
 <body style="font-family:sans-serif; padding:20px;">
 
-  <h2>파일 선택 테스트</h2>
+  <h2>직접 파일 선택 테스트</h2>
 
-  <p>아래 버튼을 누르면 사진 선택창이 떠야 합니다.</p>
+  <p>아래 입력창을 직접 눌러보세요.</p>
 
-  <label for="fileInput" style="display:inline-block; padding:14px 20px; background:#2563eb; color:white; border-radius:10px; cursor:pointer;">
-    + 사진 추가하기
-  </label>
-
-  <input
-    id="fileInput"
-    type="file"
-    accept="image/*"
-    multiple
-    style="position:absolute; left:-9999px; width:1px; height:1px; opacity:0;"
-  >
+  <input id="fileInput" type="file" accept="image/*" multiple style="font-size:18px;">
 
   <p id="result" style="margin-top:20px;">대기 중</p>
 
