@@ -2,6 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>사진 업로드</title>
 <link rel="stylesheet" href="style.css">
 
@@ -17,13 +18,13 @@
     storageBucket: "upload-business-photo.firebasestorage.app",
     messagingSenderId: "509973531120",
     appId: "1:509973531120:web:fe7f5481e2402a6abb7535"
-  };
+};
 
   const app = initializeApp(firebaseConfig);
   const storage = getStorage(app);
   const db = getFirestore(app);
 
-  const uploadCode = "482917";
+  const code = "482917";
 
   window.addEventListener("DOMContentLoaded", () => {
     const addPhotoBtn = document.getElementById("addPhotoBtn");
@@ -31,78 +32,59 @@
     const progressText = document.getElementById("progressText");
     const progressFill = document.getElementById("progressFill");
     const thumbGrid = document.getElementById("thumbGrid");
-    const failText = document.getElementById("failText");
 
-    let totalFiles = 0;
-    let completedFiles = 0;
-    let failedFiles = 0;
+    let uploadedCount = 0;
+    let totalCount = 0;
 
     addPhotoBtn.addEventListener("click", () => {
       fileInput.click();
     });
 
-    fileInput.addEventListener("change", async (e) => {
-      const files = Array.from(e.target.files);
-      if (!files.length) return;
+    fileInput.addEventListener("change", async (event) => {
+      const files = Array.from(event.target.files);
+      if (files.length === 0) return;
 
-      totalFiles += files.length;
-      updateStatus();
+      totalCount += files.length;
+      progressText.textContent = `전체 진행률: ${uploadedCount} / ${totalCount}장 완료`;
 
       for (const file of files) {
+        const fileName = `${Date.now()}_${file.name}`;
+        const storageRef = ref(storage, `uploads/${code}/${fileName}`);
+        const uploadTask = uploadBytesResumable(storageRef, file);
+
         const thumb = document.createElement("div");
         thumb.className = "thumb";
         thumb.textContent = "⏳";
         thumbGrid.appendChild(thumb);
 
-        try {
-          const fileName = `${Date.now()}_${file.name}`;
-          const storageRef = ref(storage, `uploads/${uploadCode}/${fileName}`);
-          const uploadTask = uploadBytesResumable(storageRef, file);
+        uploadTask.on(
+          "state_changed",
+          null,
+          (error) => {
+            console.error("업로드 실패:", error);
+            thumb.textContent = "❌";
+          },
+          async () => {
+            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
 
-          await new Promise((resolve, reject) => {
-            uploadTask.on(
-              "state_changed",
-              null,
-              reject,
-              resolve
-            );
-          });
+            await addDoc(collection(db, "photos"), {
+              code: code,
+              fileName: file.name,
+              storagePath: `uploads/${code}/${fileName}`,
+              downloadURL: downloadURL,
+              createdAt: serverTimestamp()
+            });
 
-          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-
-          await addDoc(collection(db, "photos"), {
-            code: uploadCode,
-            fileName: file.name,
-            storagePath: `uploads/${uploadCode}/${fileName}`,
-            downloadURL: downloadURL,
-            createdAt: serverTimestamp()
-          });
-
-          completedFiles++;
-          thumb.textContent = "✅";
-        } catch (error) {
-          console.error("업로드 실패:", error);
-          failedFiles++;
-          thumb.textContent = "❌";
-        }
-
-        updateStatus();
+            uploadedCount++;
+            thumb.textContent = "✅";
+            progressText.textContent = `전체 진행률: ${uploadedCount} / ${totalCount}장 완료`;
+            progressFill.style.width = `${(uploadedCount / totalCount) * 100}%`;
+          }
+        );
       }
 
       fileInput.value = "";
     });
-
-    function updateStatus() {
-      progressText.textContent = `전체 진행률: ${completedFiles} / ${totalFiles}장 완료`;
-      const percent = totalFiles === 0 ? 0 : (completedFiles / totalFiles) * 100;
-      progressFill.style.width = `${percent}%`;
-
-      if (failedFiles > 0) {
-        failText.textContent = `⚠️ 실패한 사진 ${failedFiles}장`;
-      } else {
-        failText.textContent = "";
-      }
-    }
   });
 </script>
 </head>
@@ -111,7 +93,7 @@
     <h1>482917 · 사진 올리는 중</h1>
 
     <button id="addPhotoBtn" class="btn btn-secondary">+ 사진 추가하기</button>
-    <input id="fileInput" type="file" accept="image/*" multiple hidden>
+    <input type="file" id="fileInput" accept="image/*" multiple style="display:none;">
 
     <p id="progressText" class="notice">전체 진행률: 0 / 0장 완료</p>
     <div class="progress-bar">
@@ -120,8 +102,7 @@
 
     <div id="thumbGrid" class="thumb-grid"></div>
 
-    <p id="failText" class="notice"></p>
-
+    <p class="notice">⚠️ 실패한 사진이 있으면 다시 업로드 버튼을 추가할 수 있습니다.</p>
     <a href="complete.html" class="btn btn-primary">업로드 완료하기</a>
   </div>
 </body>
