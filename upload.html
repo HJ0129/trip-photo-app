@@ -3,45 +3,24 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>사진 업로드</title>
-  <link rel="stylesheet" href="style.css">
+  <title>버튼 테스트</title>
 </head>
 <body>
-  <div class="screen">
-    <h1 id="pageTitle">482917 · 사진 올리는 중</h1>
+  <button id="addPhotoBtn" type="button">+ 사진 추가하기</button>
+  <input id="fileInput" type="file" accept="image/*" multiple>
 
-    <button id="addPhotoBtn" type="button">+ 사진 추가하기</button>
-    <input id="fileInput" type="file" accept="image/*" multiple>
+  <script>
+    const addPhotoBtn = document.getElementById("addPhotoBtn");
+    const fileInput = document.getElementById("fileInput");
 
-    <p id="progressText" class="notice">전체 진행률: 0 / 0장 완료</p>
+    addPhotoBtn.addEventListener("click", () => {
+      alert("버튼 클릭됨");
+      fileInput.click();
+    });
 
-    <div class="progress-bar">
-      <div id="progressFill" class="progress-bar-fill"></div>
-    </div>
-
-    <div id="thumbGrid" class="thumb-grid"></div>
-
-    <p id="failText" class="notice"></p>
-
-    <button id="retryBtn" class="btn btn-danger" type="button" style="display:none;">
-      🔄 실패한 사진 다시 올리기
-    </button>
-
-    <a href="complete.html" class="btn btn-primary">업로드 완료하기</a>
-  </div>
-
- <script>
-  const addPhotoBtn = document.getElementById("addPhotoBtn");
-  const fileInput = document.getElementById("fileInput");
-
-  addPhotoBtn.addEventListener("click", () => {
-    alert("버튼 클릭됨");
-    fileInput.click();
-  });
-
-  fileInput.addEventListener("change", () => {
-    alert("사진 선택됨");
-  });
-</script>
+    fileInput.addEventListener("change", () => {
+      alert("파일 선택됨");
+    });
+  </script>
 </body>
 </html>
