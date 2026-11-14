@@ -4,44 +4,116 @@
 <meta charset="UTF-8">
 <title>사진 업로드</title>
 <link rel="stylesheet" href="style.css">
-  <!-- Firebase SDK 불러오기 -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getStorage } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
-  import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyD6RYhfF9PAToTmoxkQLSxUAXeCQDTY6nA",
-    authDomain: "upload-business-photo.firebaseapp.com",
-    projectId: "upload-business-photo",
-    storageBucket: "upload-business-photo.firebasestorage.app",
-    messagingSenderId: "509973531120",
-    appId: "1:509973531120:web:fe7f5481e2402a6abb7535"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const storage = getStorage(app);
-  const db = getFirestore(app);
-
-  window.storage = storage;
-  window.db = db;
-</script>
 </head>
 <body>
   <div class="screen">
-    <h1>482917 · 사진 올리는 중</h1>
-    <button class="btn btn-secondary">+ 사진 추가하기</button>
-    <p class="notice">전체 진행률: 32 / 50장 완료</p>
-    <div class="progress-bar"><div class="progress-bar-fill"></div></div>
-    <div class="thumb-grid">
-      <div class="thumb">✅</div>
-      <div class="thumb">✅</div>
-      <div class="thumb">⏳</div>
-      <div class="thumb">❌</div>
-    </div>
-    <p class="notice">⚠️ 실패한 사진 1장</p>
-    <button class="btn btn-danger">🔄 실패한 사진 다시 올리기</button>
+    <h1 id="uploadTitle">사진 올리는 중</h1>
+    <button class="btn btn-secondary" id="addPhotoBtn">+ 사진 추가하기</button>
+    <p class="notice" id="progressText">전체 진행률: 0 / 0장 완료</p>
+    <div class="progress-bar"><div class="progress-bar-fill" id="progressFill"></div></div>
+    <div class="thumb-grid" id="thumbGrid"></div>
+    <p class="notice" id="failText"></p>
+    <button class="btn btn-danger" id="retryBtn">🔄 실패한 사진 다시 올리기</button>
     <a href="complete.html" class="btn btn-primary">업로드 완료하기</a>
   </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+    import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyD6RYhfF9PAToTmoxkQLSxUAXeCQDTY6nA",
+      authDomain: "upload-business-photo.firebaseapp.com",
+      projectId: "upload-business-photo",
+      storageBucket: "upload-business-photo.firebasestorage.app",
+      messagingSenderId: "509973531120",
+      appId: "1:509973531120:web:fe7f5481e2402a6abb7535"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const storage = getStorage(app);
+    const db = getFirestore(app);
+
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("code") || "코드없음";
+
+    const titleEl = document.getElementById("uploadTitle");
+    const addBtn = document.getElementById("addPhotoBtn");
+    const progressText = document.getElementById("progressText");
+    const progressFill = document.getElementById("progressFill");
+    const thumbGrid = document.getElementById("thumbGrid");
+    const failText = document.getElementById("failText");
+
+    titleEl.textContent = `${code} · 사진 올리는 중`;
+
+    const fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.accept = "image/*";
+    fileInput.multiple = true;
+    fileInput.style.display = "none";
+    document.body.appendChild(fileInput);
+
+    let totalCount = 0;
+    let successCount = 0;
+    let failCount = 0;
+
+    addBtn.addEventListener("click", () => {
+      fileInput.click();
+    });
+
+    fileInput.addEventListener("change", async (e) => {
+      const files = Array.from(e.target.files);
+      if (!files.length) return;
+
+      totalCount += files.length;
+      updateProgress();
+
+      for (const file of files) {
+        const thumb = document.createElement("div");
+        thumb.className = "thumb";
+        thumb.textContent = "⏳";
+        thumbGrid.appendChild(thumb);
+
+        try {
+          const fileName = `${Date.now()}_${file.name}`;
+          const storageRef = ref(storage, `uploads/${code}/${fileName}`);
+          const uploadTask = uploadBytesResumable(storageRef, file);
+
+          await new Promise((resolve, reject) => {
+            uploadTask.on("state_changed", null, reject, resolve);
+          });
+
+          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+
+          await addDoc(collection(db, "photos"), {
+            code: code,
+            fileName: file.name,
+            storedFileName: fileName,
+            downloadURL: downloadURL,
+            createdAt: serverTimestamp()
+          });
+
+          successCount++;
+          thumb.textContent = "✅";
+        } catch (error) {
+          console.error("업로드 실패:", error);
+          failCount++;
+          thumb.textContent = "❌";
+        }
+
+        updateProgress();
+      }
+
+      fileInput.value = "";
+    });
+
+    function updateProgress() {
+      progressText.textContent = `전체 진행률: ${successCount} / ${totalCount}장 완료`;
+      const percent = totalCount === 0 ? 0 : (successCount / totalCount) * 100;
+      progressFill.style.width = `${percent}%`;
+      failText.textContent = failCount > 0 ? `⚠️ 실패한 사진 ${failCount}장` : "";
+    }
+  </script>
 </body>
 </html>
