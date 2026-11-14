@@ -109,22 +109,142 @@
 </head>
 <body>
   <div class="screen">
-    <h1>482917 · 사진 올리는 중</h1>
+    <h1 id="pageTitle">482917 · 사진 올리는 중</h1>
 
     <button id="addPhotoBtn" class="btn btn-secondary">+ 사진 추가하기</button>
-    <input id="fileInput" type="file" accept="image/*" multiple style="display:none;">
+    <input type="file" id="photoInput" accept="image/*" multiple hidden>
 
-    <p id="progressText" class="notice">전체 진행률: 0 / 0장 완료</p>
+    <p id="progressText" class="notice">전체 진행률: 0 / 50장 완료</p>
     <div class="progress-bar">
-      <div id="progressFill" class="progress-bar-fill" style="width:0%;"></div>
+      <div id="progressBarFill" class="progress-bar-fill" style="width:0%;"></div>
     </div>
 
     <div id="thumbGrid" class="thumb-grid"></div>
 
-    <p id="failText" class="notice"></p>
+    <p id="failText" class="notice" style="display:none;">⚠️ 실패한 사진 0장</p>
+    <button id="retryBtn" class="btn btn-danger" style="display:none;">🔄 실패한 사진 다시 올리기</button>
 
-    <button class="btn btn-danger">🔄 실패한 사진 다시 올리기</button>
     <a href="complete.html" class="btn btn-primary">업로드 완료하기</a>
   </div>
 </body>
+</body>
+  <script type="module">
+  import {
+    ref,
+    uploadBytesResumable,
+    getDownloadURL
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+
+  import {
+    collection,
+    addDoc,
+    serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const storage = window.storage;
+  const db = window.db;
+
+  const code = "482917";
+  const maxPhotos = 50;
+
+  const addPhotoBtn = document.getElementById("addPhotoBtn");
+  const photoInput = document.getElementById("photoInput");
+  const progressText = document.getElementById("progressText");
+  const progressBarFill = document.getElementById("progressBarFill");
+  const thumbGrid = document.getElementById("thumbGrid");
+  const failText = document.getElementById("failText");
+  const retryBtn = document.getElementById("retryBtn");
+
+  let uploadedCount = 0;
+  let failedFiles = [];
+
+  addPhotoBtn.addEventListener("click", () => {
+    photoInput.click();
+  });
+
+  photoInput.addEventListener("change", async (e) => {
+    const files = Array.from(e.target.files);
+
+    if (!files.length) return;
+
+    for (const file of files) {
+      if (uploadedCount >= maxPhotos) {
+        alert("최대 50장까지 업로드할 수 있습니다.");
+        break;
+      }
+
+      await uploadSingleFile(file);
+    }
+
+    photoInput.value = "";
+    updateUI();
+  });
+
+  retryBtn.addEventListener("click", async () => {
+    const retryTargets = [...failedFiles];
+    failedFiles = [];
+
+    for (const file of retryTargets) {
+      await uploadSingleFile(file);
+    }
+
+    updateUI();
+  });
+
+  async function uploadSingleFile(file) {
+    const thumb = document.createElement("div");
+    thumb.className = "thumb";
+    thumb.textContent = "⏳";
+    thumbGrid.appendChild(thumb);
+
+    try {
+      const fileName = `${Date.now()}_${file.name}`;
+      const storageRef = ref(storage, `uploads/${code}/${fileName}`);
+
+      const uploadTask = uploadBytesResumable(storageRef, file);
+
+      await new Promise((resolve, reject) => {
+        uploadTask.on(
+          "state_changed",
+          null,
+          reject,
+          resolve
+        );
+      });
+
+      const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+
+      await addDoc(collection(db, "photos"), {
+        code: code,
+        fileName: file.name,
+        storedFileName: fileName,
+        downloadURL: downloadURL,
+        uploadedAt: serverTimestamp()
+      });
+
+      uploadedCount++;
+      thumb.textContent = "✅";
+    } catch (error) {
+      console.error("업로드 실패:", error);
+      thumb.textContent = "❌";
+      failedFiles.push(file);
+    }
+  }
+
+  function updateUI() {
+    progressText.textContent = `전체 진행률: ${uploadedCount} / ${maxPhotos}장 완료`;
+    progressBarFill.style.width = `${(uploadedCount / maxPhotos) * 100}%`;
+
+    if (failedFiles.length > 0) {
+      failText.style.display = "block";
+      failText.textContent = `⚠️ 실패한 사진 ${failedFiles.length}장`;
+      retryBtn.style.display = "inline-block";
+    } else {
+      failText.style.display = "none";
+      retryBtn.style.display = "none";
+    }
+  }
+
+  updateUI();
+</script>
 </html>
