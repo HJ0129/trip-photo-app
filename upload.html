@@ -6,17 +6,23 @@
   <title>버튼 테스트</title>
 </head>
 <body>
-  <button id="addPhotoBtn" type="button">+ 사진 추가하기</button>
-  <input id="fileInput" type="file" accept="image/*" multiple>
+ <button id="addPhotoBtn" type="button" class="btn btn-secondary">+ 사진 추가하기</button>
 
+<input
+  id="fileInput"
+  type="file"
+  accept="image/*"
+  multiple
+  style="position:absolute; left:-9999px; width:1px; height:1px;"
+>
   <script>
     const addPhotoBtn = document.getElementById("addPhotoBtn");
     const fileInput = document.getElementById("fileInput");
 
     addPhotoBtn.addEventListener("click", () => {
-      alert("버튼 클릭됨");
-      fileInput.click();
-    });
+  alert("버튼 클릭됨");
+  fileInput.click();
+});
 
     fileInput.addEventListener("change", () => {
       alert("파일 선택됨");
