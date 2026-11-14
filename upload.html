@@ -31,12 +31,11 @@
     const progressText = document.getElementById("progressText");
     const progressFill = document.getElementById("progressFill");
     const thumbGrid = document.getElementById("thumbGrid");
-    const failNotice = document.getElementById("failNotice");
+    const failText = document.getElementById("failText");
 
-    let totalCount = 0;
-    let completedCount = 0;
-    let failedCount = 0;
-    let failedFiles = [];
+    let totalFiles = 0;
+    let completedFiles = 0;
+    let failedFiles = 0;
 
     addPhotoBtn.addEventListener("click", () => {
       fileInput.click();
@@ -46,72 +45,62 @@
       const files = Array.from(e.target.files);
       if (!files.length) return;
 
-      totalCount += files.length;
-      updateProgress();
+      totalFiles += files.length;
+      updateStatus();
 
       for (const file of files) {
-        await uploadSingleFile(file);
+        const thumb = document.createElement("div");
+        thumb.className = "thumb";
+        thumb.textContent = "⏳";
+        thumbGrid.appendChild(thumb);
+
+        try {
+          const fileName = `${Date.now()}_${file.name}`;
+          const storageRef = ref(storage, `uploads/${uploadCode}/${fileName}`);
+          const uploadTask = uploadBytesResumable(storageRef, file);
+
+          await new Promise((resolve, reject) => {
+            uploadTask.on(
+              "state_changed",
+              null,
+              reject,
+              resolve
+            );
+          });
+
+          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+
+          await addDoc(collection(db, "photos"), {
+            code: uploadCode,
+            fileName: file.name,
+            storagePath: `uploads/${uploadCode}/${fileName}`,
+            downloadURL: downloadURL,
+            createdAt: serverTimestamp()
+          });
+
+          completedFiles++;
+          thumb.textContent = "✅";
+        } catch (error) {
+          console.error("업로드 실패:", error);
+          failedFiles++;
+          thumb.textContent = "❌";
+        }
+
+        updateStatus();
       }
 
       fileInput.value = "";
     });
 
-    async function uploadSingleFile(file) {
-      const thumb = document.createElement("div");
-      thumb.className = "thumb";
-      thumb.textContent = "⏳";
-      thumbGrid.appendChild(thumb);
-
-      try {
-        const filePath = `uploads/${uploadCode}/${Date.now()}_${file.name}`;
-        const storageRef = ref(storage, filePath);
-        const uploadTask = uploadBytesResumable(storageRef, file);
-
-        await new Promise((resolve, reject) => {
-          uploadTask.on(
-            "state_changed",
-            null,
-            (error) => reject(error),
-            async () => {
-              resolve();
-            }
-          );
-        });
-
-        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-
-        await addDoc(collection(db, "photoUploads"), {
-          code: uploadCode,
-          fileName: file.name,
-          filePath: filePath,
-          downloadURL: downloadURL,
-          uploadedAt: serverTimestamp()
-        });
-
-        completedCount++;
-        thumb.textContent = "✅";
-        updateProgress();
-      } catch (error) {
-        console.error("업로드 실패:", error);
-        failedCount++;
-        failedFiles.push(file);
-        thumb.textContent = "❌";
-        updateProgress();
-        updateFailNotice();
-      }
-    }
-
-    function updateProgress() {
-      progressText.textContent = `전체 진행률: ${completedCount} / ${totalCount}장 완료`;
-      const percent = totalCount === 0 ? 0 : (completedCount / totalCount) * 100;
+    function updateStatus() {
+      progressText.textContent = `전체 진행률: ${completedFiles} / ${totalFiles}장 완료`;
+      const percent = totalFiles === 0 ? 0 : (completedFiles / totalFiles) * 100;
       progressFill.style.width = `${percent}%`;
-    }
 
-    function updateFailNotice() {
-      if (failedCount > 0) {
-        failNotice.textContent = `⚠️ 실패한 사진 ${failedCount}장`;
+      if (failedFiles > 0) {
+        failText.textContent = `⚠️ 실패한 사진 ${failedFiles}장`;
       } else {
-        failNotice.textContent = "";
+        failText.textContent = "";
       }
     }
   });
@@ -126,14 +115,13 @@
 
     <p id="progressText" class="notice">전체 진행률: 0 / 0장 완료</p>
     <div class="progress-bar">
-      <div id="progressFill" class="progress-bar-fill" style="width: 0%;"></div>
+      <div id="progressFill" class="progress-bar-fill" style="width:0%;"></div>
     </div>
 
     <div id="thumbGrid" class="thumb-grid"></div>
 
-    <p id="failNotice" class="notice"></p>
+    <p id="failText" class="notice"></p>
 
-    <button class="btn btn-danger">🔄 실패한 사진 다시 올리기</button>
     <a href="complete.html" class="btn btn-primary">업로드 완료하기</a>
   </div>
 </body>
