@@ -93,3 +93,54 @@ input[type="text"] {
   text-align: center;
   margin: 16px 0;
 }
+/* PC(사진 받기) 화면 전용 - 넓은 레이아웃 */
+.screen-wide {
+  width: 100%;
+  max-width: 900px;
+  background: #fff;
+  border-radius: 20px;
+  padding: 40px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+
+.screen-wide h1 {
+  text-align: left;
+  margin-bottom: 30px;
+}
+
+/* 코드 입력 화면은 PC여도 가운데 좁게 유지 */
+.screen-center {
+  width: 100%;
+  max-width: 480px;
+  background: #fff;
+  border-radius: 20px;
+  padding: 40px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  text-align: center;
+}
+
+/* PC 사진 목록 - 화면 넓게 쓰도록 그리드 칸수 늘림 */
+.thumb-grid-wide {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
+  margin: 24px 0;
+}
+
+.thumb-grid-wide .thumb {
+  height: 140px;
+  font-size: 24px;
+}
+
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.btn-wide {
+  width: auto;
+  display: inline-block;
+  padding: 14px 28px;
+}
