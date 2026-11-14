@@ -8,10 +8,21 @@
 <body>
   <div class="screen">
     <h1>나의 업로드 코드</h1>
-    <div class="code-box">482917</div>
-    <button class="btn btn-secondary">📋 코드 복사</button>
+    <div class="code-box" id="codeBox">482917</div>
+    <button class="btn btn-secondary" id="copyBtn">📋 코드 복사</button>
     <p class="notice">⏰ 이 코드는 24시간 후 자동으로 사라집니다</p>
-    <a href="upload.html" class="btn btn-primary">다음 (사진 선택하기) →</a>
+    <a href="upload.html?code=482917" class="btn btn-primary">다음 (사진 선택하기) →</a>
   </div>
+
+  <script>
+    const copyBtn = document.getElementById('copyBtn');
+    const codeBox = document.getElementById('codeBox');
+
+    copyBtn.addEventListener('click', async () => {
+      const code = codeBox.textContent.trim();
+      await navigator.clipboard.writeText(code);
+      alert('업로드 코드가 복사되었습니다: ' + code);
+    });
+  </script>
 </body>
 </html>
