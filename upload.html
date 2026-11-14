@@ -111,17 +111,21 @@
   <div class="screen">
     <h1>482917 · 사진 올리는 중</h1>
 
-  <button
+ <button
   id="addPhotoBtn"
-  class="btn btn-secondary"
   type="button"
-  onclick="alert('버튼 클릭됨')"
+  onclick="document.getElementById('fileInput').click()"
   style="position:relative; z-index:9999; pointer-events:auto;"
 >
   + 사진 추가하기
 </button>
-    <input id="fileInput" type="file" accept="image/*" multiple style="display:none;">
-
+    <input
+  id="fileInput"
+  type="file"
+  accept="image/*"
+  multiple
+  style="position:fixed; left:-9999px;"
+>
     <p id="progressText" class="notice">전체 진행률: 0 / 0장 완료</p>
     <div class="progress-bar">
       <div id="progressFill" class="progress-bar-fill" style="width:0%;"></div>
